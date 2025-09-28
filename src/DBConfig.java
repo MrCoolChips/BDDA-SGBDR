@@ -1,72 +1,54 @@
-package BDDA;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-/**
- * DBConfig gère la configuration de la base de données, notamment le chemin vers la base.
- */
 public class DBConfig {
-    // Chemin vers la base de données
-    public String dbpath;
+    private String dbpath;
     
     /**
-     * Constructeur prenant le chemin de la base de données.
-     * @param chemin Le chemin vers la base de données.
+     * Constructeur de la classe DBConfig
+     * Initialise une nouvelle configuration de base de données avec le chemin spécifié
+     * @param dbpath le chemin vers la base de données
      */
-    public DBConfig(String chemin) {
-        dbpath = chemin;
+    public DBConfig(String dbpath) {
+        this.dbpath = dbpath;
     }
-    
+
     /**
-     * Charge la configuration de la base de données à partir d'un fichier.
-     * @param fichier_config Fichier de configuration.
-     * @return DBConfig contenant la configuration chargée.
-     * @throws IOException Si le fichier n'existe pas ou ne peut être lu.
-     * @throws IllegalArgumentException Si le champ 'dbpath' est manquant ou mal formaté.
+     * Récupère le chemin de la base de données
+     * @return le chemin vers la base de données
+     */
+    public String getPath() {
+        return dbpath;
+    }
+
+    /**
+     * Charge la configuration de la base de données depuis un fichier
+     * Lit le fichier ligne par ligne et cherche la ligne contenant "dbpath = '...'"
+     * @param fichier_config le fichier de configuration à lire
+     * @return une nouvelle instance de DBConfig avec le chemin trouvé, ou null si non trouvé
+     * @throws IOException si une erreur de lecture du fichier survient
      */
     public static DBConfig LoadDBConfig(File fichier_config) throws IOException {
-        if (fichier_config == null || !fichier_config.exists()) {
-            throw new IOException("Fichier de configuration introuvable : " + fichier_config);
-        }
-
-        String dbpath = null;
-
-        // Lecture du fichier ligne par ligne
-        try (BufferedReader reader = new BufferedReader(new FileReader(fichier_config))) {
-            String line;
-
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-
-                // Ignore les lignes vides ou les commentaires
-                if (line.isEmpty() || line.startsWith("#")) continue;
-
-                // On suppose que chaque ligne valide est au format clé=valeur
-                String[] parts = line.split("=", 2);
-                if (parts.length == 2) {
-                    String key = parts[0].trim();
-                    String value = parts[1].trim();
-
-                    // On vérifie la clé dbpath et son format
-                    if (key.equals("dbpath")) {
-                        if (value.endsWith("/DB’")) {
-                            dbpath = value;
-                        } else {
-                            throw new IllegalArgumentException("Champ 'dbpath' manquant dans le fichier de configuration (/DB)'");
-                        }
-                    }
-                }
+        BufferedReader reader = new BufferedReader(new FileReader(fichier_config));
+        String line  = reader.readLine();
+        while(line != null) {
+            if(line.startsWith("dbpath = '")) {
+                int start = line.indexOf("'");
+                int end = line.indexOf("'", start + 1);
+                String path = line.substring(start + 1, end);
+                reader.close();
+                return new DBConfig(path);
             }
+            line = reader.readLine();
         }
-
-        // On lève une exception si dbpath n'a pas été trouvé
-        if (dbpath == null) {
-            throw new IllegalArgumentException("Champ 'dbpath' manquant dans le fichier de configuration.");
-        }
-
-        return new DBConfig(dbpath);
+        reader.close();
+        return null;
     }
+
 }
+
+    
+
+
