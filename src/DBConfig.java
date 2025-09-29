@@ -5,49 +5,86 @@ import java.io.IOException;
 
 public class DBConfig {
     private String dbpath;
+    private int pagesize;
+    private int dm_maxfilesize; 
     
     /**
-     * Constructeur de la classe DBConfig
-     * Initialise une nouvelle configuration de base de données avec le chemin spécifié
+     * Constructeur complet de la classe DBConfig
+     * Initialise une nouvelle configuration de base de données avec tous les paramètres
      * @param dbpath le chemin vers la base de données
+     * @param pagesize la taille des pages en octets
+     * @param dm_maxfilesize la taille maximale des fichiers en octets
      */
-    public DBConfig(String dbpath) {
+    public DBConfig(String dbpath, int pagesize, int dm_maxfilesize) {
         this.dbpath = dbpath;
+        this.pagesize = pagesize;
+        this.dm_maxfilesize = dm_maxfilesize;
     }
-
+    
     /**
      * Récupère le chemin de la base de données
      * @return le chemin vers la base de données
      */
     public String getPath() {
-        return dbpath;
+        return this.dbpath;
     }
 
     /**
-     * Charge la configuration de la base de données depuis un fichier
-     * Lit le fichier ligne par ligne et cherche la ligne contenant "dbpath = '...'"
+     * Récupère la taille des pages de la base de données
+     * @return la taille des pages en octets
+     */
+    public int getPageSize() {
+        return this.pagesize;
+    }
+
+    /**
+     * Récupère la taille maximale des fichiers de la base de données
+     * @return la taille maximale des fichiers en octets
+     */
+    public int getMaxFileSize() {
+        return this.dm_maxfilesize;
+    }
+
+    /**
+     * Charge la configuration complète de la base de données depuis un fichier
      * @param fichier_config le fichier de configuration à lire
-     * @return une nouvelle instance de DBConfig avec le chemin trouvé, ou null si non trouvé
+     * @return une nouvelle instance de DBConfig avec toutes les valeurs trouvées, ou null si incomplete
      * @throws IOException si une erreur de lecture du fichier survient
      */
     public static DBConfig LoadDBConfig(File fichier_config) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(fichier_config));
         String line  = reader.readLine();
+        String dbpath = null;
+        int pagesize = 0;
+        int dm_maxfilesize = 0;
         while(line != null) {
             if(line.startsWith("dbpath = '")) {
                 int start = line.indexOf("'");
                 int end = line.indexOf("'", start + 1);
-                String path = line.substring(start + 1, end);
-                reader.close();
-                return new DBConfig(path);
+                dbpath = line.substring(start + 1, end);
             }
+            else if (line.startsWith("pagesize = ")) {
+                String value = line.substring("pagesize = ".length()).trim();
+                pagesize = Integer.parseInt(value);
+            }
+            else if (line.startsWith("dm_maxfilesize = ")) {
+                String value = line.substring("dm_maxfilesize = ".length()).trim();
+                dm_maxfilesize = Integer.parseInt(value);
+            } 
             line = reader.readLine();
         }
+        
         reader.close();
+        if (dbpath != null && pagesize > 0 && dm_maxfilesize > 0) {
+            return new DBConfig(dbpath, pagesize, dm_maxfilesize);
+        }
+
         return null;
     }
-
+        
 }
+
+
 
     
 

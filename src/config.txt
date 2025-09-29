@@ -1,13 +1,9 @@
 # Fichier de configuration de la base de données
 # Ceci est un commentaire
 
-# Configuration du serveur
-server = localhost
-port = 5432
-
 # Chemin de la base de données - ligne importante !
 dbpath = '/home/user/database/mydb'
 
 # Autres configurations
-timeout = 30
-debug = true
+pagesize = 64
+dm_maxfilesize = 1024
