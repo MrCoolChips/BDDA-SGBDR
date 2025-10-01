@@ -1,4 +1,4 @@
-package BDAA;
+package bdda;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -26,7 +26,7 @@ public class DiskManager {
 
 	public DiskManager(DBConfig config) {
 		this.config = config;
-		freePages = new LinkedList<>();
+		this.freePages = new LinkedList<>();
 	}
 	
 	/**

@@ -1,4 +1,4 @@
-package BDAA;
+package bdda;
 
 public class PageId {
 

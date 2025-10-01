@@ -1,9 +1,0 @@
-# Fichier de configuration de la base de données
-# Ceci est un commentaire
-
-# Chemin de la base de données - ligne importante !
-dbpath = 'src/'
-
-# Autres configurations
-pagesize = 64
-dm_maxfilesize = 1024

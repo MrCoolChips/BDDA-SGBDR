@@ -1,4 +1,4 @@
-package BDAA;
+package bdda;
 
 import java.io.File;
 import java.io.IOException;
