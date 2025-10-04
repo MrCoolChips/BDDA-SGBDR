@@ -1,6 +1,10 @@
 package bdda;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.LinkedList;
@@ -20,9 +24,10 @@ public class DiskManager {
      * @param config configuration de la base de données contenant
      *               le chemin, la taille des pages et le nombre max de fichiers
      */
-    public DiskManager(DBConfig config) {
+    public DiskManager(DBConfig config) throws IOException {
         this.config = config;
         this.freePages = new LinkedList<>();
+        this.Init();
     }
 
     /**
@@ -130,6 +135,67 @@ public class DiskManager {
             long offset = getOffset(pageId, f);
             raf.seek(offset);
             raf.write(buff);
+        }
+    }
+
+    /**
+     * Finalise le DiskManager à l'arrêt du SGBD.
+     * Sauvegarde la liste des pages libres dans un fichier au format CSV
+     * pour permettre leur récupération au prochain démarrage.
+     * 
+     * @throws IOException si impossible d'écrire le fichier de sauvegarde
+     */
+    public void finish() throws IOException {
+        File saveFile = new File(config.getPath(), "dm.save");
+        
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(saveFile))) {
+            for (PageId page : freePages) {
+                writer.write(page.getFileIdx() + "," + page.getPageIdx());
+                writer.newLine();
+            }
+        }
+    }
+
+    /**
+     * Initialise le DiskManager au démarrage du SGBD.
+     * Charge la liste des pages libres depuis le fichier de sauvegarde
+     * pour restaurer l'état du gestionnaire au dernier arrêt.
+     * 
+     * @throws IOException si erreur lors de la lecture du fichier de sauvegarde
+     */
+    public void Init() throws IOException {
+        LoadState();
+    }
+
+    /**
+     * Charge la liste des pages libres depuis le fichier de sauvegarde.
+     * Lit le fichier dm.save ligne par ligne, chaque ligne contenant
+     * un PageId au format "fileIdx,pageIdx". Si le fichier n'existe pas,
+     * commence avec une liste de pages libres vide.
+     * 
+     * @throws IOException si erreur lors de la lecture du fichier ou
+     *                     si le format des données est invalide
+     */
+    private void LoadState() throws IOException {
+        File saveFile = new File(config.getPath(), "dm.save");
+        
+        freePages.clear();
+        
+        if (!saveFile.exists()) {
+            return;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(saveFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                
+                if (parts.length == 2) {
+                    int fileIdx = Integer.parseInt(parts[0].trim());
+                    int pageIdx = Integer.parseInt(parts[1].trim());
+                    freePages.add(new PageId(fileIdx, pageIdx));
+                }
+            }
         }
     }
 

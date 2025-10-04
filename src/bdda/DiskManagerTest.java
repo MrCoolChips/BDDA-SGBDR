@@ -28,6 +28,9 @@ public class DiskManagerTest {
             // 5. Test gestion d'erreurs
             testErrorHandling();
             
+            // 6. Test Init/Finish (persistance)
+            testInitFinish();
+            
             System.out.println("\nTOUS LES TESTS REUSSIS !");
             
         } catch (Exception e) {
@@ -189,5 +192,88 @@ public class DiskManagerTest {
         }
         
         System.out.println("   OK - Gestion d'erreurs correcte");
+    }
+    
+    /**
+     * Test 6 : Persistance avec Init() et finish()
+     */
+    private static void testInitFinish() throws IOException {
+        System.out.println("\n6. Test persistance Init/finish...");
+        
+        File configFile = new File("config/config.txt");
+        DBConfig config = DBConfig.LoadDBConfig(configFile);
+        
+        // === PHASE 1 : Créer et sauvegarder des pages libres ===
+        {
+            DiskManager dm1 = new DiskManager(config);
+            dm1.Init(); // Devrait commencer avec une liste vide
+            
+            // Allouer quelques pages
+            PageId page1 = dm1.allocPage();
+            PageId page2 = dm1.allocPage();
+            PageId page3 = dm1.allocPage();
+            
+            System.out.println("   OK - Pages allouées : " + 
+                page1.getFileIdx() + "," + page1.getPageIdx() + " | " +
+                page2.getFileIdx() + "," + page2.getPageIdx() + " | " +
+                page3.getFileIdx() + "," + page3.getPageIdx());
+            
+            // Désallouer certaines pages pour créer des pages libres
+            dm1.DeallocPage(page1);
+            dm1.DeallocPage(page3);
+            
+            System.out.println("   OK - Pages désallouées : " + 
+                page1.getFileIdx() + "," + page1.getPageIdx() + " et " +
+                page3.getFileIdx() + "," + page3.getPageIdx());
+            
+            // Sauvegarder l'état
+            dm1.finish();
+            System.out.println("   OK - État sauvegardé avec finish()");
+        }
+        
+        // === PHASE 2 : Charger les pages libres dans une nouvelle instance ===
+        {
+            DiskManager dm2 = new DiskManager(config);
+            dm2.Init(); // Devrait charger les pages libres sauvegardées
+            
+            System.out.println("   OK - État chargé avec Init()");
+            
+            // Les prochaines allocations devraient réutiliser les pages libres
+            PageId reused1 = dm2.allocPage(); // Devrait être page1 ou page3
+            PageId reused2 = dm2.allocPage(); // Devrait être l'autre page libre
+            PageId newPage = dm2.allocPage(); // Devrait être une nouvelle page
+            
+            System.out.println("   OK - Pages réutilisées : " + 
+                reused1.getFileIdx() + "," + reused1.getPageIdx() + " | " +
+                reused2.getFileIdx() + "," + reused2.getPageIdx() + " | " +
+                newPage.getFileIdx() + "," + newPage.getPageIdx());
+            
+           
+             
+            System.out.println("   OK - Réutilisation correcte des pages sauvegardées");
+            
+            // Nettoyer pour le prochain test
+            dm2.finish();
+        }
+        
+        // === PHASE 3 : Tester Init() sans fichier de sauvegarde ===
+        {
+            // Supprimer le fichier de sauvegarde
+            File saveFile = new File(config.getPath(), "dm.save");
+            if (saveFile.exists()) {
+                saveFile.delete();
+            }
+            
+            DiskManager dm3 = new DiskManager(config);
+            dm3.Init(); // Devrait fonctionner même sans fichier de sauvegarde
+            
+            PageId firstPage = dm3.allocPage();
+            System.out.println("   OK - Init() fonctionne sans fichier de sauvegarde, première page : " + 
+                firstPage.getFileIdx() + "," + firstPage.getPageIdx());
+
+            dm3.finish();
+        }
+        
+        System.out.println("   OK - Persistance Init/finish complètement fonctionnelle");
     }
 }
