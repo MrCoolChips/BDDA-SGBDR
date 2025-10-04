@@ -2,7 +2,7 @@
 # Ceci est un commentaire
 
 # Chemin de la base de données - ligne importante !
-dbpath = 'src/BinData'
+dbpath = 'BinData/'
 
 # Autres configurations
 pagesize = 64
