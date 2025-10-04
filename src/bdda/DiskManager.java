@@ -36,31 +36,27 @@ public class DiskManager {
 	 */
 	public PageId allocPage() throws IOException {
 
-	    if (!freePages.isEmpty()) {
-	    	// Réutilisation d'une page désallouée
-	        return freePages.poll();
-	    }
+		if (!freePages.isEmpty()) {
+			return freePages.poll();
+		}
 
-	    int fileIdx = 0;
-	    
-	    while (true) {
-	        File f = new File(config.getPath(), "F" + fileIdx + ".rsdb");
-	        if (!f.exists()) {
-	            f.createNewFile();
-	        }
+		int maxFiles = config.getMaxFileCount(); 
+		
+		for (int fileIdx = 0; fileIdx < maxFiles; fileIdx++) {
+			File f = new File(config.getPath(), "Data" + fileIdx + ".bin");
+			if (!f.exists()) {
+				f.createNewFile();
+			}
 
-	        if (f.length() + config.getPageSize() <= config.getMaxFileSize()) {
-	            try (RandomAccessFile raf = new RandomAccessFile(f, "rw")) {
-	            	long pageIdx = raf.length() / config.getPageSize();
-	                raf.seek(raf.length());
-	                // page vide
-	                raf.write(new byte[config.getPageSize()]);
-	                return new PageId(fileIdx, (int) pageIdx);
-	            }
-	        }
-
-	        fileIdx++;
-	    }
+			try (RandomAccessFile raf = new RandomAccessFile(f, "rw")) {
+				long pageIdx = raf.length() / config.getPageSize();
+				raf.seek(raf.length());
+				raf.write(new byte[config.getPageSize()]);
+				return new PageId(fileIdx, (int) pageIdx);
+			}
+		}
+		
+		throw new IOException("Limite de fichiers atteinte (" + maxFiles + ")");
 	}
 	
 	/**
@@ -197,5 +193,4 @@ public class DiskManager {
 			System.out.println(it.next());
 		}
 	}
-
 }
