@@ -8,19 +8,18 @@ import java.io.IOException;
 public class DBConfig {
     private String dbpath;
     private int pagesize;
-    private int dm_maxfilesize; 
+    private int dm_maxfilecount;
     
     /**
      * Constructeur complet de la classe DBConfig
      * Initialise une nouvelle configuration de base de données avec tous les paramètres
      * @param dbpath le chemin vers la base de données
      * @param pagesize la taille des pages en octets
-     * @param dm_maxfilesize la taille maximale des fichiers en octets
      */
-    public DBConfig(String dbpath, int pagesize, int dm_maxfilesize) {
+    public DBConfig(String dbpath, int pagesize, int dm_maxfilecount) {
         this.dbpath = dbpath;
         this.pagesize = pagesize;
-        this.dm_maxfilesize = dm_maxfilesize;
+        this.dm_maxfilecount = dm_maxfilecount;
     }
     
     /**
@@ -39,12 +38,8 @@ public class DBConfig {
         return this.pagesize;
     }
 
-    /**
-     * Récupère la taille maximale des fichiers de la base de données
-     * @return la taille maximale des fichiers en octets
-     */
-    public int getMaxFileSize() {
-        return this.dm_maxfilesize;
+    public int getMaxFileCount() {
+        return this.dm_maxfilecount;
     }
 
     /**
@@ -58,7 +53,7 @@ public class DBConfig {
         String line  = reader.readLine();
         String dbpath = null;
         int pagesize = 0;
-        int dm_maxfilesize = 0;
+        int dm_maxfilecount = 0;
         while(line != null) {
             if(line.startsWith("dbpath = '")) {
                 int start = line.indexOf("'");
@@ -69,16 +64,16 @@ public class DBConfig {
                 String value = line.substring("pagesize = ".length()).trim();
                 pagesize = Integer.parseInt(value);
             }
-            else if (line.startsWith("dm_maxfilesize = ")) {
-                String value = line.substring("dm_maxfilesize = ".length()).trim();
-                dm_maxfilesize = Integer.parseInt(value);
+            else if (line.startsWith("dm_maxfilecount = ")) {
+                String value = line.substring("dm_maxfilecount = ".length()).trim();
+                dm_maxfilecount = Integer.parseInt(value);
             } 
             line = reader.readLine();
         }
         
         reader.close();
-        if (dbpath != null && pagesize > 0 && dm_maxfilesize > 0) {
-            return new DBConfig(dbpath, pagesize, dm_maxfilesize);
+        if (dbpath != null && pagesize > 0 && dm_maxfilecount > 0) {
+            return new DBConfig(dbpath, pagesize, dm_maxfilecount);
         }
 
         return null;

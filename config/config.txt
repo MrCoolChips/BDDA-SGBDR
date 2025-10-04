@@ -7,3 +7,4 @@ dbpath = 'src/'
 # Autres configurations
 pagesize = 64
 dm_maxfilesize = 1024
+dm_maxfilecount = 10

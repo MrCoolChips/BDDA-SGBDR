@@ -16,13 +16,13 @@ public class DBConfigTest {
      * @throws IOException si une erreur de lecture du fichier survient
      */
     public static void main(String[] args) throws IOException {
-        File fichier = new File("src/config.txt");
+        File fichier = new File("config/config.txt");
         DBConfig bd = DBConfig.LoadDBConfig(fichier);
         try {
-            System.out.println(bd.getPath() + " " +  bd.getMaxFileSize() + " " + bd.getPageSize());
+            System.out.println(bd.getPath() + " " +  bd.getMaxFileCount() + " " + bd.getPageSize());
         } catch (NullPointerException e) {
             System.out.println("Erreur : Configuration non trouvée ou incomplète !");
-            System.out.println("Vérifiez que le fichier contient : dbpath, pagesize, dm_maxfilesize");
+            System.out.println("Vérifiez que le fichier contient : dbpath, pagesize, dm_maxfilecount");
         }
     }
 }
