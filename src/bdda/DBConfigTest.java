@@ -19,7 +19,7 @@ public class DBConfigTest {
         File fichier = new File("config/config.txt");
         DBConfig bd = DBConfig.LoadDBConfig(fichier);
         try {
-            System.out.println(bd.getPath() + " " +  bd.getMaxFileCount() + " " + bd.getPageSize());
+            System.out.println(" PATH : " + bd.getPath() + "\n MAXFILECOUNT : " +  bd.getMaxFileCount() + "\n PAGESIZE : " + bd.getPageSize() + "\n BUFFERCOUNT : " + bd.getBufferCount() + "\n BUFFERPOLICY : " + bd.getBufferPolicy());
         } catch (NullPointerException e) {
             System.out.println("Erreur : Configuration non trouvée ou incomplète !");
             System.out.println("Vérifiez que le fichier contient : dbpath, pagesize, dm_maxfilecount");
