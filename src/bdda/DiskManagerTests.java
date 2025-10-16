@@ -7,7 +7,7 @@ import java.io.IOException;
  * Classe de test complète pour DiskManager
  * Teste toutes les fonctionnalités : allocation, lecture, écriture, désallocation
  */
-public class DiskManagerTest {
+public class DiskManagerTests {
 
     public static void main(String[] args) {
         try {

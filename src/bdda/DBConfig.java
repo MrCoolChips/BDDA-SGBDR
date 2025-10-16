@@ -6,7 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 enum BufferPolicy {
-    LRU, CLOCK, MRU
+    LRU, MRU
 }
 
 public class DBConfig {
