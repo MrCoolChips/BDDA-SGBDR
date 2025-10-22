@@ -55,7 +55,7 @@ public class RelationTests {
         // Préparation du test
         List<String> colNames = Arrays.asList("ID", "SALAIRE", "NOM");
         List<String> colTypes = Arrays.asList("INT", "FLOAT", "CHAR(10)");
-        Relation relation = new Relation("EMPLOYE", colNames, colTypes);
+        Relation relation = new Relation("EMPLOYE", colNames, colTypes, null, 0, null, null);
 
         Record enregistrementOriginal = new Record();
         enregistrementOriginal.addValue(99);
@@ -103,7 +103,7 @@ public class RelationTests {
         // Préparation du test
         List<String> colNames = Arrays.asList("ID", "NOM");
         List<String> colTypes = Arrays.asList("INT", "VARCHAR(20)");
-        Relation relation = new Relation("PRODUIT", colNames, colTypes);
+        Relation relation = new Relation("PRODUIT", colNames, colTypes, null, 0, null, null);
 
         Record enregistrement = new Record();
         enregistrement.addValue(404);

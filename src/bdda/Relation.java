@@ -1,8 +1,10 @@
 package bdda;
 
+import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -21,6 +23,11 @@ public class Relation {
     
     /** La liste ordonnée des types des colonnes (ex: "INT", "FLOAT", "CHAR(10)", "VARCHAR(255)"). */
     private List<String> columnTypes;
+    
+    private PageId headerPageId;
+    private int recordPerPage;
+    private DiskManager diskManager;
+    private BufferManager bufferManager;
 
     /**
      * Construit une nouvelle instance de Relation.
@@ -29,10 +36,14 @@ public class Relation {
      * @param columnNames La liste des noms de colonnes.
      * @param columnTypes La liste des types de colonnes, correspondant à la liste des noms.
      */
-    public Relation(String name, List<String> columnNames, List<String> columnTypes) {
+    public Relation(String name, List<String> columnNames, List<String> columnTypes, PageId headerPageId, int recordPerPage,DiskManager diskManager, BufferManager bufferManager) {
         this.name = name;
         this.columnNames = columnNames;
         this.columnTypes = columnTypes;
+        this.headerPageId = headerPageId;
+        this.recordPerPage = recordPerPage;
+        this.diskManager = diskManager;
+        this.bufferManager = bufferManager;
     }
 
     /**
@@ -213,4 +224,103 @@ public class Relation {
             }
         }
     }
+    
+
+    public void addDataPage() throws IOException {
+        // Allouer une nouvelle page de données
+        PageId newPage = diskManager.allocPage();
+
+        // Ouvrir la Header Page via le BufferManager
+        byte[] headerBuf = bufferManager.GetPage(headerPageId);
+        ByteBuffer hb = ByteBuffer.wrap(headerBuf);
+
+        // Lire le nombre courant d’entrées
+        final int pageSize = bufferManager.getConfig().getPageSize();
+        if (pageSize < 12) {
+            bufferManager.FreePage(headerPageId, false);
+            throw new IOException("Taille de page insuffisante pour stocker la Header Page.");
+        }
+
+        int count = hb.getInt(0);
+        int entryOffset = 4 + (count * 8);
+
+        // Vérifier qu’on ne dépasse pas la taille de page
+        if (entryOffset + 8 > pageSize) {
+            bufferManager.FreePage(headerPageId, false);
+            throw new IOException("Header Page pleine : impossible d’ajouter une nouvelle entrée (offset=" + entryOffset + ", pageSize=" + pageSize + ").");
+        }
+
+        // Écrire la nouvelle entrée (fileIdx, pageIdx), puis incrémenter count
+        hb.putInt(entryOffset, newPage.getFileIdx());
+        hb.putInt(entryOffset + 4, newPage.getPageIdx());
+        hb.putInt(0, count + 1);
+
+        // Libérer la page d’en-tête (dirty = true car on a modifié son contenu)
+        bufferManager.FreePage(headerPageId, true);
+    }
+    
+    public PageId getFreeDataPageId(int sizeRecord) throws IOException {
+        
+    	if (sizeRecord < 0) {
+            throw new IllegalArgumentException("sizeRecord ne peut pas être négatif.");
+        }
+
+        final int pageSize = bufferManager.getConfig().getPageSize();
+
+        // Charger la Header Page via le BufferManager
+        byte[] headerBuf = bufferManager.GetPage(headerPageId);
+        ByteBuffer hb = ByteBuffer.wrap(headerBuf);
+
+        // Lire le nombre de pages référencées
+        if (pageSize < 4) {
+            bufferManager.FreePage(headerPageId, false);
+            throw new IOException("Taille de page insuffisante pour une Header Page valide.");
+        }
+        int count = hb.getInt(0);
+
+        // Parcourir les entrées (8 octets chacune)
+        for (int i = 0; i < count; i++) {
+            int entryOffset = 4 + i * 8;
+            if (entryOffset + 8 > pageSize) {
+                // Protection contre une header corrompue
+                bufferManager.FreePage(headerPageId, false);
+                throw new IOException("Header Page corrompue: entrée hors limites (index=" + i + ").");
+            }
+
+            int fileIdx = hb.getInt(entryOffset);
+            int pageIdx = hb.getInt(entryOffset + 4);
+            PageId pid = new PageId(fileIdx, pageIdx);
+
+            // Lire la Data Page candidate et calculer l’espace libre réel
+            byte[] dataBuf = bufferManager.GetPage(pid);
+            ByteBuffer db = ByteBuffer.wrap(dataBuf);
+
+            if (pageSize < 8) {
+                bufferManager.FreePage(pid, false);
+                bufferManager.FreePage(headerPageId, false);
+                throw new IOException("Taille de page insuffisante pour un footer valide.");
+            }
+
+            int nbRecords = db.getInt(pageSize - 8);
+            int freePos   = db.getInt(pageSize - 4);
+
+            // Directory déjà utilisé + footer 8 octets
+            int directoryUsed = nbRecords * 8;
+            int freeBytes = pageSize - freePos - 8 - directoryUsed; // 8 pour la future entrée (pos,taille)
+
+            bufferManager.FreePage(pid, false);
+
+            // Assez de place ? (payload + entrée répertoire)
+            if (freeBytes >= sizeRecord + 8) {
+                bufferManager.FreePage(headerPageId, false);
+                return pid;
+            }
+        }
+
+        // Aucune page ne convient
+        bufferManager.FreePage(headerPageId, false);
+        return null;
+    }
+
+	
 }
